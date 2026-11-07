@@ -2,14 +2,23 @@
 
 Консольное приложение для анализа зависимостей пакетов Alpine Linux.
 
-## Первый этап
+## Этапы
 
 На первом этапе приложение принимает параметры командной строки, проверяет их
-и выводит в формате `ключ=значение`. Работа с репозиторием и построение графа
-будут добавлены на следующих этапах.
+и выводит в формате `ключ=значение`.
+
+На втором этапе приложение загружает `APKINDEX.tar.gz` из репозитория Alpine
+Linux, находит пакет с указанными именем и версией и выводит его прямые
+зависимости. Полный граф и визуализация появятся на следующих этапах.
 
 ## Запуск
 
 ```text
-run.bat --package curl --repository https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/ --version 8.17.0-r1 --output curl.svg --max-depth 3 --filter debug --ascii-tree
+run.bat --package curl --repository https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/ --version 8.23.0-r0 --output curl.svg --max-depth 3
+```
+
+## Тесты
+
+```bat
+python -m pytest -v
 ```
