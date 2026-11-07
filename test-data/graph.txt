@@ -1,0 +1,7 @@
+# Тестовый граф третьего этапа
+A: B C
+B: D
+C: D
+D:
+LOOP_A: LOOP_B
+LOOP_B: LOOP_A
