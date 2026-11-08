@@ -1,8 +1,14 @@
+from pathlib import Path
+
 from cli import parse_args
-from graph import build_graph, format_graph, parse_test_graph
+from graph import (
+    build_graph,
+    format_graph,
+    package_dependencies,
+    parse_test_graph,
+)
 from repository import (
     RepositoryError,
-    direct_dependencies,
     find_package,
     load_index,
     parse_index,
@@ -10,12 +16,10 @@ from repository import (
 
 
 def main() -> None:
-    """Запускает программу второго этапа и выводит прямые зависимости пакета."""
+    """Строит граф зависимостей выбранного пакета."""
     options = parse_args()
     try:
         if options.test_mode:
-            from pathlib import Path
-
             graph_data = parse_test_graph(
                 Path(options.repository).read_text(encoding="utf-8")
             )
@@ -23,10 +27,8 @@ def main() -> None:
             index_text = load_index(options.repository)
             packages = parse_index(index_text)
             package = find_package(packages, options.package, options.version)
-            graph_data = {
-                item["P"]: direct_dependencies(item) for item in packages
-            }
-            graph_data[options.package] = direct_dependencies(package)
+            others = [item for item in packages if item["P"] != options.package]
+            graph_data = package_dependencies(others + [package])
     except RepositoryError as error:
         raise SystemExit(f"error: {error}") from error
     except (OSError, UnicodeDecodeError) as error:

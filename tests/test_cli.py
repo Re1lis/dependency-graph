@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
 from cli import parse_args
-from graph import build_graph, parse_test_graph
+from graph import build_graph, package_dependencies, parse_test_graph
 from repository import direct_dependencies, find_package, parse_index
 
 
@@ -72,3 +72,16 @@ def test_filter_and_cycle():
     graph = parse_test_graph("A: B debug-lib\nB: A\ndebug-lib:")
     result = build_graph(graph, "A", max_depth=5, filter_text="debug")
     assert result == {"A": ["B"], "B": ["A"]}
+
+
+def test_alpine_dependency_resolution():
+    """Проверяет версии и capability Alpine из полей D и p."""
+    packages = parse_index(
+        "P:curl\nV:1.0\nD:libcurl=1.0 so:libz.so.1\n"
+        "p:cmd:curl=1.0\n\n"
+        "P:libcurl\nV:1.0\nD:zlib\n\n"
+        "P:zlib\nV:1.0\np:so:libz.so.1\n"
+    )
+    graph = package_dependencies(packages)
+    assert graph["curl"] == ["libcurl", "zlib"]
+    assert graph["libcurl"] == ["zlib"]

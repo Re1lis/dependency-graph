@@ -13,14 +13,38 @@ def dependency_name(dependency: str) -> str:
 def package_dependencies(
     packages: list[dict[str, str]],
 ) -> dict[str, list[str]]:
-    """Создаёт отображение имени пакета на имена его зависимостей."""
+    """Создаёт отображение пакета на разрешённые имена зависимостей.
+
+    Поле `D` может содержать версию или capability `so:...`. Поле `p`
+    показывает, какой пакет предоставляет такую capability.
+    """
+    package_names = {package.get("P") for package in packages}
+    providers = {}
+    for package in packages:
+        package_name = package.get("P")
+        for provided in package.get("p", "").split():
+            providers[dependency_name(provided)] = package_name
+
     return {
         package["P"]: [
-            dependency_name(item) for item in package.get("D", "").split()
+            resolve_dependency(item, package_names, providers)
+            for item in package.get("D", "").split()
         ]
         for package in packages
         if package.get("P")
     }
+
+
+def resolve_dependency(
+    dependency: str,
+    package_names: set[str],
+    providers: dict[str, str],
+) -> str:
+    """Преобразует запись зависимости в имя пакета для обхода графа."""
+    name = dependency_name(dependency)
+    if name in package_names:
+        return name
+    return providers.get(name, name)
 
 
 def parse_test_graph(graph_text: str) -> dict[str, list[str]]:
@@ -51,25 +75,27 @@ def build_graph(
     """
     result = {root: []}
     visited = {root}
-    queue = [(root, 0)]
 
-    def visit_queue() -> None:
-        """Рекурсивно обрабатывает очередь BFS по уровням глубины."""
-        if not queue:
+    def visit_level(level: list[str], depth: int) -> None:
+        """Обрабатывает один уровень BFS и переходит к следующему."""
+        if not level or depth >= max_depth:
             return
-        package, depth = queue.pop(0)
-        if depth < max_depth:
+        next_level = []
+        for package in level:
             for dependency in dependencies.get(package, []):
                 if filter_text and filter_text in dependency:
                     continue
-                result.setdefault(package, []).append(dependency)
+                result.setdefault(package, [])
+                if dependency in result[package]:
+                    continue
+                result[package].append(dependency)
                 result.setdefault(dependency, [])
                 if dependency not in visited:
                     visited.add(dependency)
-                    queue.append((dependency, depth + 1))
-        visit_queue()
+                    next_level.append(dependency)
+        visit_level(next_level, depth + 1)
 
-    visit_queue()
+    visit_level([root], 0)
     return result
 
 
