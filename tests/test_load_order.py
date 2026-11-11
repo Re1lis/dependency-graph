@@ -1,6 +1,7 @@
 """Проверки порядка загрузки на тестовых графах."""
 
 import sys
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 from graph import build_graph, parse_test_graph
 from load_order import DependencyCycleError, load_order
 
-LEVEL_COUNT = 200
+LEVEL_COUNT = 1500
+SUCCESS = 0
 
 
 def test_shared_dependency_loads_once_and_first():
@@ -27,7 +29,7 @@ def test_chain_order():
 
 
 def test_many_levels():
-    """Обход проходит цепочку из двухсот уровней."""
+    """Обход проходит цепочку глубже стандартного предела рекурсии."""
     graph = {str(i): [str(i + 1)] for i in range(LEVEL_COUNT)}
     graph[str(LEVEL_COUNT)] = []
     result = build_graph(graph, "0", LEVEL_COUNT)
@@ -48,3 +50,18 @@ def test_cycle_has_no_load_order():
     graph = build_graph(source, "A", max_depth=3)
     with pytest.raises(DependencyCycleError, match="цикл"):
         load_order(graph)
+
+
+def test_cycle_command(tmp_path):
+    """Команда сообщает о цикле и завершается с ненулевым кодом."""
+    source = tmp_path / "cycle.txt"
+    source.write_text("A: B\nB: A\n", encoding="utf-8")
+    command = [
+        sys.executable, str(Path(__file__).parents[1] / "src" / "main.py"),
+        "--package", "A", "--repository", str(source), "--test-mode",
+        "--version", "1", "--output", "result.svg", "--max-depth", "3",
+        "--load-order",
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+    assert result.returncode != SUCCESS
+    assert "цикл" in result.stderr

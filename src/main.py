@@ -50,7 +50,7 @@ def main() -> None:
     try:
         order = load_order(graph)
     except DependencyCycleError as error:
-        print(f"Порядок загрузки не определён: {error}")
+        raise SystemExit(f"Порядок загрузки не определён: {error}") from error
     else:
         print("\nПорядок загрузки зависимостей:")
         for name in order:

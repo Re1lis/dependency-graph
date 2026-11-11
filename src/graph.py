@@ -2,6 +2,8 @@
 
 import re
 
+LEVELS_PER_BATCH = 100
+
 
 def dependency_name(dependency: str) -> str:
     """Извлекает имя пакета из записи с ограничением версии."""
@@ -76,10 +78,10 @@ def build_graph(
     result = {root: []}
     visited = {root}
 
-    def visit_level(level: list[str], depth: int) -> None:
-        """Обрабатывает один уровень BFS и переходит к следующему."""
-        if not level or depth >= max_depth:
-            return
+    def visit_level(level, depth, remaining):
+        """Рекурсивно обрабатывает ограниченную группу уровней BFS."""
+        if not level or depth >= max_depth or not remaining:
+            return level, depth
         next_level = []
         for package in level:
             for dependency in dependencies.get(package, []):
@@ -93,9 +95,11 @@ def build_graph(
                 if dependency not in visited:
                     visited.add(dependency)
                     next_level.append(dependency)
-        visit_level(next_level, depth + 1)
+        return visit_level(next_level, depth + 1, remaining - 1)
 
-    visit_level([root], 0)
+    level, depth = [root], 0
+    while level and depth < max_depth:
+        level, depth = visit_level(level, depth, LEVELS_PER_BATCH)
     return result
 
 
