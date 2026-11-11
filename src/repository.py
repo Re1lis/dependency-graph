@@ -53,6 +53,7 @@ def load_index(repository: str) -> str:
         message = f"не удалось разобрать APKINDEX: {error}"
         raise RepositoryError(message) from error
 
+
 def parse_index(index_text: str) -> list[dict[str, str]]:
     """Преобразует текст APKINDEX в список словарей с полями пакетов."""
     packages = []

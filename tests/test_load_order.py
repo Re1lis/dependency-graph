@@ -10,6 +10,8 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 from graph import build_graph, parse_test_graph
 from load_order import DependencyCycleError, load_order
 
+LEVEL_COUNT = 200
+
 
 def test_shared_dependency_loads_once_and_first():
     """Общая зависимость загружается перед обоими пакетами."""
@@ -26,10 +28,11 @@ def test_chain_order():
 
 def test_many_levels():
     """Обход проходит цепочку из двухсот уровней."""
-    graph = {str(i): [str(i + 1)] for i in range(200)}
-    graph["200"] = []
-    result = build_graph(graph, "0", 200)
-    assert len(result) == 201
+    graph = {str(i): [str(i + 1)] for i in range(LEVEL_COUNT)}
+    graph[str(LEVEL_COUNT)] = []
+    result = build_graph(graph, "0", LEVEL_COUNT)
+    expected_count = LEVEL_COUNT + 1
+    assert len(result) == expected_count
 
 
 def test_depth_limit_changes_order():

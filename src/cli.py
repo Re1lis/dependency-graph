@@ -54,17 +54,8 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def parse_args(args=None):
-    """Разбирает аргументы запуска и проверяет их значения.
-
-    Возвращает объект с настройками программы или завершает запуск
-    с сообщением об ошибке, если параметры некорректны.
-    """
-    parser = build_parser()
-    options = parser.parse_args(args)
-
-    if not options.package.strip():
-        parser.error("параметр --package не может быть пустым")
+def validate_repository(parser, options) -> None:
+    """Проверяет адрес репозитория или путь к тестовому файлу."""
     if not options.repository.strip():
         parser.error("параметр --repository не может быть пустым")
     if options.test_mode:
@@ -78,8 +69,10 @@ def parse_args(args=None):
             parser.error(
                 "--repository: укажите полный URL с http:// или https://"
             )
-    if not options.version.strip():
-        parser.error("параметр --version не может быть пустым")
+
+
+def validate_output(parser, options) -> None:
+    """Проверяет имя выходного файла и его каталог."""
     output_is_invalid = (
         not options.output.strip()
         or not options.output.lower().endswith(".svg")
@@ -91,6 +84,18 @@ def parse_args(args=None):
     output = Path(options.output)
     if not output.stem or not output.parent.is_dir():
         parser.error("--output: укажите имя файла и существующий каталог")
+
+
+def parse_args(args=None):
+    """Разбирает и проверяет параметры командной строки."""
+    parser = build_parser()
+    options = parser.parse_args(args)
+    if not options.package.strip():
+        parser.error("параметр --package не может быть пустым")
+    validate_repository(parser, options)
+    if not options.version.strip():
+        parser.error("параметр --version не может быть пустым")
+    validate_output(parser, options)
     if options.max_depth < MIN_DEPTH:
         parser.error("параметр --max-depth должен быть неотрицательным")
     return options
