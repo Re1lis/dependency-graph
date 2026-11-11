@@ -6,19 +6,21 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+MIN_FIELD_LINE_LENGTH = 2
+
 
 class RepositoryError(RuntimeError):
     """Ошибка загрузки или разбора индекса пакетов."""
 
 
-def load_index(repository: str, test_mode: bool = False) -> str:
+def load_index(repository: str) -> str:
     """Загружает APKINDEX из URL репозитория или локального файла.
 
     Возвращает текстовый индекс, содержащий записи пакетов Alpine Linux.
     """
     source = repository.strip()
     try:
-        if test_mode or not source.startswith(("http://", "https://")):
+        if not source.startswith(("http://", "https://")):
             data = Path(source).read_bytes()
         else:
             request = urllib.request.Request(
@@ -51,14 +53,13 @@ def load_index(repository: str, test_mode: bool = False) -> str:
         message = f"не удалось разобрать APKINDEX: {error}"
         raise RepositoryError(message) from error
 
-
 def parse_index(index_text: str) -> list[dict[str, str]]:
     """Преобразует текст APKINDEX в список словарей с полями пакетов."""
     packages = []
     for block in index_text.strip().split("\n\n"):
         fields = {}
         for line in block.splitlines():
-            if len(line) >= 2 and line[1] == ":":
+            if len(line) >= MIN_FIELD_LINE_LENGTH and line[1] == ":":
                 fields[line[0]] = line[2:].strip()
         if fields.get("P") and fields.get("V"):
             packages.append(fields)

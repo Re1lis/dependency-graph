@@ -5,6 +5,13 @@ from urllib.parse import urlsplit
 MIN_DEPTH = 0
 
 
+def add_load_order_option(parser: argparse.ArgumentParser) -> None:
+    """Добавляет переключатель вывода порядка загрузки."""
+    parser.add_argument(
+        "--load-order", action="store_true", help="показать порядок загрузки"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Создаёт и настраивает парсер аргументов командной строки."""
     parser = argparse.ArgumentParser(
@@ -24,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="использовать локальный тестовый репозиторий",
     )
     parser.add_argument("--version", required=True, help="версия пакета")
+    add_load_order_option(parser)
     parser.add_argument(
         "--output", required=True, help="имя выходного SVG-файла"
     )

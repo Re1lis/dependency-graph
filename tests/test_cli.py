@@ -7,9 +7,11 @@ from cli import parse_args
 from graph import build_graph, package_dependencies, parse_test_graph
 from repository import direct_dependencies, find_package, parse_index
 
+ARGUMENT_ERROR = 2
+
 
 def test_valid_arguments():
-    """Проверяет корректные параметры."""
+    """Проверяет, что корректные аргументы успешно разбираются."""
     options = parse_args(
         [
             "--package",
@@ -24,12 +26,15 @@ def test_valid_arguments():
             "3",
         ]
     )
+
+    expected_max_depth = 3
+
     assert options.package == "curl"
-    assert options.max_depth == 3
+    assert options.max_depth == expected_max_depth
 
 
 def test_negative_depth_is_rejected():
-    """Проверяет ошибку отрицательной глубины."""
+    """Проверяет отклонение отрицательной максимальной глубины."""
     try:
         parse_args(
             [
@@ -46,7 +51,7 @@ def test_negative_depth_is_rejected():
             ]
         )
     except SystemExit as error:
-        assert error.code == 2
+        assert error.code == ARGUMENT_ERROR
     else:
         raise AssertionError("Ожидалась ошибка для отрицательной глубины")
 
