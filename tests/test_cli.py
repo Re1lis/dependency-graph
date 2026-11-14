@@ -117,7 +117,7 @@ def test_cycle_graph():
 
 
 def test_alpine_dependency_resolution():
-    """Проверяет версии и capability Alpine из полей D и p."""
+    """Проверяет версию и разрешение so:libz.so.1 через поле p пакета zlib."""
     packages = parse_index(
         "P:curl\nV:1.0\nD:libcurl=1.0 so:libz.so.1\n"
         "p:cmd:curl=1.0\n\n"
@@ -125,6 +125,5 @@ def test_alpine_dependency_resolution():
         "P:zlib\nV:1.0\np:so:libz.so.1\n"
     )
     graph = package_dependencies(packages)
-    # so:libz.so.1 предоставляет пакет zlib через поле p.
     assert graph["curl"] == ["libcurl", "zlib"]
     assert graph["libcurl"] == ["zlib"]
